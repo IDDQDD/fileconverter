@@ -1,0 +1,16 @@
+{
+    "server": {
+        "host" : "cppmashine",
+        "port" : 8080,
+        "address" : "0.0.0.0",
+        "threads" : 8
+
+    },
+    "connection": {
+        "read_message_max" : 65536,
+        "auto_fragment" : true
+    },
+    "ErrorHandling": {
+        "log_file": "error.log"
+    }
+}
