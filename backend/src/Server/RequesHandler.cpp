@@ -93,10 +93,9 @@ void RequestHandler::handle_json(size_t &bytes_transferred) {
 };
 
 std::string RequestHandler::handle_file(size_t &bytes_transferred) {
-    auto mime =detect_mime_type(bytes_transferred);
-    // Add convert file from .so library;
     ws_.text(true);
+
     buffer_.consume(bytes_transferred);
-    return mime;
+    return  "";
 
 };
