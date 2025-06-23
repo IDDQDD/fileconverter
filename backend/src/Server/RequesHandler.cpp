@@ -97,5 +97,4 @@ std::string RequestHandler::handle_file(size_t &bytes_transferred) {
 
     buffer_.consume(bytes_transferred);
     return  "";
-
 };
