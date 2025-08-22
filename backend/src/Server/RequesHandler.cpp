@@ -94,6 +94,7 @@ void RequestHandler::handle_json(size_t &bytes_transferred) {
 
 std::string RequestHandler::handle_file(size_t &bytes_transferred) {
     ws_.text(true);
+    
 
     buffer_.consume(bytes_transferred);
     return  "";

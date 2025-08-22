@@ -10,8 +10,8 @@ class PluginManager {
     public:
         PluginManager();
         IConverterFactory* get_converter(const std::string &mime_type, const std::string &target_format);
-        void LoadPlugins();
+        ErrorCode LoadPlugins();
     private:
-        int load_plugin_windows(const std::string &path);
-        int load_plugin_unix(const std::string &path);
+        ErrorCode load_plugin_windows(const std::string &path);
+        ErrorCode load_plugin_unix(const std::string &path);
 };

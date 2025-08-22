@@ -4,6 +4,7 @@
 #include <vector>
 #include <../include/Server/ServerCore.hpp>
 #include <../include/Server/ErrorHandler.hpp>
+#include <../include/Server/PluginManager.hpp>
 
 int main(int argc, char* argv[])
 {
@@ -12,6 +13,11 @@ int main(int argc, char* argv[])
         const auto settings = read_from_file("../config/settings.json");
         const auto threads = settings.at("threads").as_int64();
     ErrorHandler::set_log_file(settings.at("log_file").as_string());
+    auto plugin_manager = std::make_unique<PluginManager>();
+    if(plugin_manager->LoadPlugins() != ErrorCode::Success) {
+        ErrorHandler::log_to_file("Some plugins failed to load!");
+        return EXIT_FAILURE;
+    } // Load plugins from the specified directory
     // The io_context is required for all I/O
     net::io_context ioc(threads);
     // Create and launch a listening 

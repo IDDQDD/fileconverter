@@ -2,6 +2,16 @@
 #include <string>
 #include <fstream>
 
+enum class ErrorCode {
+    Success = 0,
+    FileNotFound,
+    PluginLoadFailed,
+    InvalidRequest,
+    ConversionFailed,
+    IOError,
+    Unknown
+};
+
 class ErrorHandler {
     static std::string filename;    
     public:
