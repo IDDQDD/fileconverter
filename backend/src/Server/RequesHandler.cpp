@@ -3,8 +3,10 @@
 #include <../include/Server/RequestHandler.hpp>
 #include "RequestHandler.hpp"
 
-RequestHandler::RequestHandler(tcp::socket &&socket, const ConnectionSettings &settings)
-     : ws_(std::move(socket)), settings_(&settings), state_(State::WaitingJson){};
+RequestHandler::RequestHandler(tcp::socket &&socket, const ConnectionSettings &settings,
+                               std::shared_ptr<PluginManager> plugin_manager)
+     : ws_(std::move(socket)), settings_(&settings), state_(State::WaitingJson), 
+       plugin_manager_(plugin_manager){};
  
 void RequestHandler::handle_request() {
     ws_.async_accept(
@@ -47,8 +49,7 @@ void RequestHandler::process_request(beast::error_code ec, std::size_t bytes_tra
         read_request(); // Continue reading the next request
         return;
     } if(state_ == State::WaitingFile) {
-        handle_file(bytes_transferred);
-        
+        handle_file(bytes_transferred);     
     }
     
         
@@ -61,6 +62,7 @@ std::string RequestHandler::detect_mime_type(std::size_t bytes_transferred_) {
     }
     auto mime = magic_buffer(magic,buffer_.data().data(),
                              bytes_transferred_);
+    magic_close(magic);
 return mime;
 }
 void RequestHandler::send_response(const void* data, std::size_t size, bool close_on_finish = false,
@@ -92,10 +94,11 @@ void RequestHandler::handle_json(size_t &bytes_transferred) {
     buffer_.consume(bytes_transferred);
 };
 
-std::string RequestHandler::handle_file(size_t &bytes_transferred) {
+void RequestHandler::handle_file(size_t &bytes_transferred) {
     ws_.text(true);
-    
-
+    auto plugin = plugin_manager_->get_converter(metadata_->mime_type, metadata_->target_format);
+    send_response(plugin->convert(buffer_.data().data(), bytes_transferred), bytes_transferred, true,
+                  websocket::close_code::normal);
     buffer_.consume(bytes_transferred);
-    return  "";
+    ws_.text(false);
 };

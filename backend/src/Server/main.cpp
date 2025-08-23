@@ -21,7 +21,7 @@ int main(int argc, char* argv[])
     // The io_context is required for all I/O
     net::io_context ioc(threads);
     // Create and launch a listening 
-    std::make_shared<ServerCore>(ioc, settings)->run();
+    std::make_shared<ServerCore>(ioc, settings, plugin_manager)->run();
     // Run the I/O service on the requested number of threads
     std::vector<std::thread> v;
     v.reserve(threads - 1);

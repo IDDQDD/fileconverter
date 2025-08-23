@@ -8,6 +8,7 @@
 #include <boost/asio/ip/tcp.hpp>
 #include "Server/Settings.hpp"
 #include "RequestHandler.hpp"
+#include "PluginManager.hpp"
 
 namespace beast = boost::beast;         // from <boost/beast.hpp>
 namespace http = beast::http;           // from <boost/beast/http.hpp>
@@ -17,16 +18,16 @@ namespace ssl = boost::asio::ssl;
 namespace json = boost::json;           // from <boost/json.hpp>
 using tcp = boost::asio::ip::tcp;       // from <boost/asio/ip/tcp.hpp>
 
-class ServerCore : std::enable_shared_from_this<ServerCore> {
-
-    tcp::acceptor acceptor_;
-    net::io_context &ioc_; // IO context for asynchronous operations
-    ConnectionSettings settings_; // Connection settings for the server
-    ServerSettings server_settings_; // Server settings for configuration
-    std::shared_ptr<RequestHandler> request_handler_; // Handler for processing requests
+class ServerCore : public std::enable_shared_from_this<ServerCore> {
+    net::io_context& ioc_;                    
+    tcp::acceptor    acceptor_;               
+    ServerSettings   server_settings_;        
+    ConnectionSettings settings_;             
+    std::shared_ptr<PluginManager> plugin_manager_; 
+    std::shared_ptr<RequestHandler> request_handler_; 
 
 public:
-    ServerCore(net::io_context &ioc, const json::value &settings);
+    ServerCore(net::io_context &ioc, const json::value &settings, std::shared_ptr<PluginManager> pm);
     void run();
 
 private:

@@ -1,7 +1,9 @@
 #pragma once
 #include <Server/ServerCore.hpp>
+#include <shared_mutex>
 #include "Settings.hpp"
 #include "IConverterFactory.hpp"
+#include "PluginManager.hpp"
 
 
 class RequestHandler : std::enable_shared_from_this<RequestHandler> {
@@ -18,10 +20,13 @@ class RequestHandler : std::enable_shared_from_this<RequestHandler> {
     IConverterFactory *converter; // Pointer to the converter factory for processing data
     std::shared_ptr<const ConnectionSettings>settings_; // Settings for the connection
     std::unique_ptr<const Metadata> metadata_; // Metadata for the request
+    std::shared_ptr<PluginManager> plugin_manager_;
+    std::shared_mutex mutex_;
     public:
 
         RequestHandler() = delete; // Delete default constructor to prevent instantiation without parameters
-        explicit RequestHandler(tcp::socket&& socket, const ConnectionSettings &settings);
+        explicit RequestHandler(tcp::socket&& socket, const ConnectionSettings &settings, 
+                                std::shared_ptr<PluginManager> plugin_manager);
         void handle_request();
     
     private:
@@ -36,6 +41,6 @@ class RequestHandler : std::enable_shared_from_this<RequestHandler> {
                            websocket::close_code close_code);
 
         void handle_json(size_t &bytes_transferred);
-        std::string handle_file(size_t &bytes_transferred);
+        void handle_file(size_t &bytes_transferred);
     }; // Class for handling HTTP requests
 // This class is responsible for reading incoming requests, processing them, and sending responses back to the client.

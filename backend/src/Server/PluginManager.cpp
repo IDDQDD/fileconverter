@@ -8,18 +8,19 @@
 #endif
 namespace fs = std::filesystem;
 ErrorCode PluginManager::LoadPlugins() {
-    ErrorCode result = ErrorCode::Success;
+    
     for(const auto &entry : fs::directory_iterator(lib_path)) {
         #ifdef _WIN32
             if(load_plugin_windows(entry.path().string()) != ErrorCode::Success) {
-                result = ErrorCode::PluginLoadFailed;
+                return ErrorCode::PluginLoadFailed;
             }
+            return ErrorCode::Success;
         #else
             if(load_plugin_unix(entry.path().string()) != ErrorCode::Success)
-                result = ErrorCode::PluginLoadFailed;
+                return ErrorCode::PluginLoadFailed;
         #endif
     }
- 
+        return ErrorCode::Success;
 }
 
 #ifdef _WIN32
@@ -56,6 +57,7 @@ ErrorCode PluginManager::load_plugin_unix(const std::string &path){
         return ErrorCode::PluginLoadFailed;
     }
     plugins_[{create_plugin()->support_mime_type(), create_plugin()->target_format()}] = create_plugin();
-    return ErrorCode::PluginLoadFailed;
+
+    return ErrorCode::Success;
 }
 #endif
