@@ -5,10 +5,24 @@
 #include "../plugins/IConverterFactory.hpp"
 #include "ErrorHandler.hpp"
 
+struct PluginInfo{
+
+    std::unique_ptr<IConverterFactory> instance;
+    #ifdef _WIN32
+        PluginInfo() : instance(nullptr), handle(nullptr) {}
+        PluginInfo(IConverterFactory* inst, HMODULE h) : instance(inst), handle(h) {}
+        HMODULE handle;
+    #else
+        PluginInfo(): instance(nullptr), handle(nullptr) {}
+        PluginInfo(IConverterFactory* inst, void* h) : instance(inst), handle(h) {}
+        void* handle;
+    #endif
+};
+
 using PluginKey = std::pair<std::string, std::string>; // Pair of mime_type and target_format
 class PluginManager {
-    std::map<PluginKey, IConverterFactory*> plugins_; // Map to store loaded plugins
-    std::shared_mutex mutex_;
+    std::shared_mutex mutex_; // Mutex for thread-safe access to the plugins map
+    std::map<PluginKey, PluginInfo> plugins_; // Map to store loaded plugins
     const std::string lib_path = "../plugins"; // Path to the plugins directory
 
     public:

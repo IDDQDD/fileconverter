@@ -65,12 +65,13 @@ std::string RequestHandler::detect_mime_type(std::size_t bytes_transferred_) {
     magic_close(magic);
 return mime;
 }
-void RequestHandler::send_response(const void* data, std::size_t size, bool close_on_finish = false,
+void RequestHandler::send_response(const std::optional<ConvertResult>& result, std::size_t size, bool close_on_finish = false,
                                    websocket::close_code code = websocket::close_code::normal) {
 // Send a response back to the client
-    ws_.async_write(boost::asio::buffer(data, size),
-        [self = shared_from_this(), close_on_finish, code](beast::error_code ec) {
-            if(ec) {
+    if(result) {
+        ws_.async_write(boost::asio::buffer(result->data.data(), result->size),
+            [self = shared_from_this(), close_on_finish, code](beast::error_code ec) {
+                if(ec) {
                 ErrorHandler::log_to_file("Error sending response: " + ec.message());
                 return;
             } else if(close_on_finish) {
@@ -86,19 +87,25 @@ void RequestHandler::send_response(const void* data, std::size_t size, bool clos
         });
 
 }
+                                   }
 
-void RequestHandler::handle_json(size_t &bytes_transferred) {
+void RequestHandler::handle_json(std::size_t &bytes_transferred) {
     auto message = beast::buffers_to_string(buffer_.data());
     metadata_ = std::make_unique<Metadata>(json::parse(message));
     ws_.text(false);
     buffer_.consume(bytes_transferred);
 };
 
-void RequestHandler::handle_file(size_t &bytes_transferred) {
-    ws_.text(true);
+void RequestHandler::handle_file(std::size_t &bytes_transferred) {
     auto plugin = plugin_manager_->get_converter(metadata_->mime_type, metadata_->target_format);
-    send_response(plugin->convert(buffer_.data().data(), bytes_transferred), bytes_transferred, true,
+    auto result = plugin->convert(buffer_.data().data(), bytes_transferred);
+    if(!result) {
+        ErrorHandler::log_to_file("Conversion failed or unsupported format");
+        send_response(std::nullopt, 0, true, websocket::close_code::unknown_data);
+        return;
+    }
+    send_response(result, bytes_transferred, true,
                   websocket::close_code::normal);
     buffer_.consume(bytes_transferred);
-    ws_.text(false);
+    ws_.text(true);
 };

@@ -14,7 +14,6 @@ ErrorCode PluginManager::LoadPlugins() {
             if(load_plugin_windows(entry.path().string()) != ErrorCode::Success) {
                 return ErrorCode::PluginLoadFailed;
             }
-            return ErrorCode::Success;
         #else
             if(load_plugin_unix(entry.path().string()) != ErrorCode::Success)
                 return ErrorCode::PluginLoadFailed;
@@ -37,8 +36,9 @@ ErrorCode PluginManager::load_plugin_windows(const std::string &path){
         FreeLibrary(handle);
         return ErrorCode::PluginLoadFailed;
     }
-    plugins_[{create_plugin()->support_mime_type(), create_plugin()->target_format()}] = create_plugin();
-    return ErrorCode::PluginLoadFailed;
+    IConverterFactory* instance = create_plugin();
+    plugins_[{instance->support_mime_type(), instance->target_format()}] = PluginInfo(instance, handle);
+    return ErrorCode::Success;
 
 
 }
@@ -56,8 +56,26 @@ ErrorCode PluginManager::load_plugin_unix(const std::string &path){
         dlclose(handle);
         return ErrorCode::PluginLoadFailed;
     }
-    plugins_[{create_plugin()->support_mime_type(), create_plugin()->target_format()}] = create_plugin();
+    IConverterFactory* instance = create_plugin();
+    plugins_[{instance->support_mime_type(), instance->target_format()}] = PluginInfo(instance, handle);
 
     return ErrorCode::Success;
 }
 #endif
+
+
+PluginManager::~PluginManager(){
+    #ifdef _WIN32
+
+        for(auto& kv : plugins_){
+            kv.second.instance.reset();
+            FreeLibrary(kv.second.handle);
+        }
+    #else
+        for(auto& kv : plugins_){
+            kv.second.instance.reset();
+            dlclose(kv.second.handle);
+        }
+
+    #endif
+}

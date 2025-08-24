@@ -1,4 +1,5 @@
 #include <hpdf.h>
+#include <optional>
 #include "text2pdf.hpp"
 #include "../backend/include/Server/ErrorHandler.hpp"
 std::string Text2Pdf::support_mime_type() const {
@@ -11,24 +12,22 @@ extern "C" IConverterFactory* create_plugin() {
     return new Text2Pdf();
 }
 
-const void* Text2Pdf::convert(const void *data, std::size_t size) {
+std::optional<ConvertResult> Text2Pdf::convert(const void *data, std::size_t size) {
     HPDF_Doc pdf = HPDF_New(nullptr, nullptr);
     if(!pdf) {
         ErrorHandler::log_to_file("Failed to create PDF document");
-        return nullptr;
+        return std::nullopt;
     }
     HPDF_Font font = HPDF_GetFont(pdf,"Times-Roman", "StandardEncoding");
     AddTextWithMargins(pdf, static_cast<const char*>(data), size, font);
     HPDF_SaveToStream(pdf);
     HPDF_UINT stream_size = HPDF_GetStreamSize(pdf);
-    HPDF_BYTE* pdf_data = new unsigned char[stream_size];
-    HPDF_ReadFromStream(pdf, pdf_data, &stream_size);
+    HPDF_ReadFromStream(pdf, pdf_data.data(), &stream_size);
     HPDF_Free(pdf);
-
-    return pdf_data;
+    return ConvertResult(pdf_data, stream_size);
 }
    
-   
+
 
 void Text2Pdf::AddTextWithMargins(HPDF_Doc pdf, const char *data, std::size_t size, HPDF_Font font, std::size_t font_size,
                                   float left, float right, float top, float bottom) {
