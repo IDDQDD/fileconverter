@@ -104,7 +104,15 @@ void RequestHandler::handle_json(std::size_t &bytes_transferred) {
     buffer_.consume(bytes_transferred);
 };
 
-void RequestHandler::handle_file(std::size_t &bytes_transferred) {
+void RequestHandler::handle_file(std::size_t &bytes_transferred){
+
+    if(!is_valid_mime_type(detect_mime_type(bytes_transferred))){
+        
+        ErrorHandler::log_to_file("MIME type mismatch or undetectable");
+        send_response(std::nullopt, true, websocket::close_code::unknown_data);
+        buffer_.consume(bytes_transferred);
+        return;
+    }
     auto plugin = plugin_manager_->get_converter(metadata_->mime_type, metadata_->target_format);
 
     if(!plugin) {
@@ -124,7 +132,7 @@ void RequestHandler::handle_file(std::size_t &bytes_transferred) {
 };
 
 bool RequestHandler::is_valid_mime_type(std::optional<std::string> mime_type){
-    if(!mime_type.has_value()){
+    if(!mime_type.has_value() || metadata_ == nullptr{
         return false;
     } else {
       return mime_type.value() == metadata_->mime_type;
