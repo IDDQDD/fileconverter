@@ -35,9 +35,10 @@ class RequestHandler : std::enable_shared_from_this<RequestHandler> {
         void read_request();
         void send_response(const std::optional<ConvertResult>& result, std::size_t size);
         void process_request(beast::error_code ec, std::size_t bytes_transferred);
-        std::string detect_mime_type(std::size_t bytes_transferred_);
+        std::optional<std::string> detect_mime_type(std::size_t bytes_transferred_);
+        bool is_valid_mime_type(std::optional<std::string> mime_type);
 
-        void send_response(const std::optional<ConvertResult>& result, std::size_t size, bool close_on_finish,
+        void send_response(const std::optional<ConvertResult>& result, bool close_on_finish,
                            websocket::close_code close_code);
 
         void handle_json(std::size_t &bytes_transferred);

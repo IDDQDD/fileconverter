@@ -54,18 +54,22 @@ void RequestHandler::process_request(beast::error_code ec, std::size_t bytes_tra
     
         
 }
-std::string RequestHandler::detect_mime_type(std::size_t bytes_transferred_) {
+std::optional<std::string> RequestHandler::detect_mime_type(std::size_t bytes_transferred_) {
     auto magic = magic_open(MAGIC_MIME_TYPE);
-    if(!magic_load(magic, nullptr)) {
+    if(!magic){
+        ErrorHandler::log_to_file("Could not initialize libmagic ");
+        return std::nullopt;
+    }
+    if(magic_load(magic, nullptr)) {
         ErrorHandler::log_to_file("Could not load magic database");
-        return; // Need error handler, which send a response to the client
+        return std::nullopt; // Need error handler, which send a response to the client
     }
     auto mime = magic_buffer(magic,buffer_.data().data(),
                              bytes_transferred_);
     magic_close(magic);
 return mime;
 }
-void RequestHandler::send_response(const std::optional<ConvertResult>& result, std::size_t size, bool close_on_finish = false,
+void RequestHandler::send_response(const std::optional<ConvertResult>& result, bool close_on_finish = false,
                                    websocket::close_code code = websocket::close_code::normal) {
 // Send a response back to the client
     if(result) {
@@ -92,20 +96,37 @@ void RequestHandler::send_response(const std::optional<ConvertResult>& result, s
 void RequestHandler::handle_json(std::size_t &bytes_transferred) {
     auto message = beast::buffers_to_string(buffer_.data());
     metadata_ = std::make_unique<Metadata>(json::parse(message));
+    if(metadata_->mime_type.empty() || metadata_->target_format.empty()){
+        ErrorHandler::log_to_file("Invalid metadata received");
+        send_response(std::nullopt, true, websocket::close_code::protocol_error);
+    }
     ws_.text(false);
     buffer_.consume(bytes_transferred);
 };
 
 void RequestHandler::handle_file(std::size_t &bytes_transferred) {
     auto plugin = plugin_manager_->get_converter(metadata_->mime_type, metadata_->target_format);
+
+    if(!plugin) {
+        ErrorHandler::log_to_file("No suitable plugin found for " + metadata_->mime_type + " to " + metadata_->target_format);
+        send_response(std::nullopt, true, websocket::close_code::unknown_data);
+        return;
+    }
     auto result = plugin->convert(buffer_.data().data(), bytes_transferred);
     if(!result) {
         ErrorHandler::log_to_file("Conversion failed or unsupported format");
-        send_response(std::nullopt, 0, true, websocket::close_code::unknown_data);
+        send_response(std::nullopt, true, websocket::close_code::unknown_data);
         return;
     }
-    send_response(result, bytes_transferred, true,
-                  websocket::close_code::normal);
+    send_response(result, true, websocket::close_code::normal);
     buffer_.consume(bytes_transferred);
     ws_.text(true);
 };
+
+bool RequestHandler::is_valid_mime_type(std::optional<std::string> mime_type){
+    if(!mime_type.has_value()){
+        return false;
+    } else {
+      return mime_type.value() == metadata_->mime_type;
+    }
+}
