@@ -1,7 +1,8 @@
 #pragma once
 #include <boost/json.hpp>
 #include <boost/beast/websocket.hpp>
-#include <SettingsUtils.hpp>
+#include "ErrorHandler.hpp"
+#include "SettingsUtils.hpp"
 
 struct ServerSettings {
     const std::string host;

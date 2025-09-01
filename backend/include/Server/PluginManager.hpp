@@ -2,7 +2,7 @@
 #include <map>
 #include <string>
 #include <shared_mutex>
-#include "../plugins/IConverterFactory.hpp"
+#include "IConverterFactory.hpp"
 #include "ErrorHandler.hpp"
 
 struct PluginInfo{
@@ -23,12 +23,13 @@ using PluginKey = std::pair<std::string, std::string>; // Pair of mime_type and 
 class PluginManager {
     std::shared_mutex mutex_; // Mutex for thread-safe access to the plugins map
     std::map<PluginKey, PluginInfo> plugins_; // Map to store loaded plugins
-    const std::string lib_path = "../plugins"; // Path to the plugins directory
+    const std::string lib_path = "plugins"; // Path to the plugins directory
 
     public:
         PluginManager() = default;
         IConverterFactory* get_converter(const std::string &mime_type, const std::string &target_format);
         ErrorCode LoadPlugins();
+        ~PluginManager();
     private:
         ErrorCode load_plugin_windows(const std::string &path);
         ErrorCode load_plugin_unix(const std::string &path);

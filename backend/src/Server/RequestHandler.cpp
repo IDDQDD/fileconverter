@@ -1,7 +1,8 @@
 #include <magic.h>
-#include <../include/Server/ErrorHandler.hpp>
-#include <../include/Server/RequestHandler.hpp>
-#include "RequestHandler.hpp"
+#include "Server/ErrorHandler.hpp"
+#include "Server/Settings.hpp"
+#include "Server/RequestHandler.hpp"
+
 
 RequestHandler::RequestHandler(tcp::socket &&socket, const ConnectionSettings &settings,
                                std::shared_ptr<PluginManager> plugin_manager)
@@ -74,9 +75,11 @@ void RequestHandler::send_response(const std::optional<ConvertResult>& result, b
 // Send a response back to the client
     if(result) {
         ws_.async_write(boost::asio::buffer(result->data.data(), result->size),
-            [self = shared_from_this(), close_on_finish, code](beast::error_code ec) {
+            [self = shared_from_this(), close_on_finish, code](beast::error_code ec, 
+                                                               std::size_t bytes_transferred) {
                 if(ec) {
-                ErrorHandler::log_to_file("Error sending response: " + ec.message());
+                ErrorHandler::log_to_file("Error sending response: " + ec.message() +
+                                          "send " + std::to_string(bytes_transferred) + " bytes");
                 return;
             } else if(close_on_finish) {
                 // Successfully sent the response, you can read the next request if needed
@@ -120,19 +123,19 @@ void RequestHandler::handle_file(std::size_t &bytes_transferred){
         send_response(std::nullopt, true, websocket::close_code::unknown_data);
         return;
     }
-    auto result = plugin->convert(buffer_.data().data(), bytes_transferred);
-    if(!result) {
+    result_ = std::move(plugin->convert(buffer_.data().data(), bytes_transferred));
+    if(!result_.has_value()) {
         ErrorHandler::log_to_file("Conversion failed or unsupported format");
         send_response(std::nullopt, true, websocket::close_code::unknown_data);
         return;
     }
-    send_response(result, true, websocket::close_code::normal);
+    send_response(result_, true, websocket::close_code::normal);
     buffer_.consume(bytes_transferred);
     ws_.text(true);
 };
 
 bool RequestHandler::is_valid_mime_type(std::optional<std::string> mime_type){
-    if(!mime_type.has_value() || metadata_ == nullptr{
+    if(!mime_type.has_value() || metadata_ == nullptr){
         return false;
     } else {
       return mime_type.value() == metadata_->mime_type;
