@@ -1,4 +1,3 @@
-
 # Бинарные файлы и плагины
 *.so
 *.dll
@@ -6,6 +5,8 @@
 *.out
 *.a
 *.o
+file_converter
+file_converter.exe
 
 # Логи
 *.log
