@@ -5,27 +5,31 @@
 #include <string>
 #include <optional>
 #include "Server/ErrorHandler.hpp"
+#include "Server/Settings.hpp"
 namespace json = boost::json;
-inline std::optional<json::value> read_from_json_file(const std::string& filename) {
-    std::ifstream file(filename);
-    if (!file.is_open()) {
-        ErrorHandler::log("Could not open settings file: " + filename);
-        return std::nullopt;
-    }
-
-    boost::system::error_code ec;
-    auto result = json::parse(file, ec);
-    if (ec) {
-        ErrorHandler::log("JSON parse error in " + filename + ": " + ec.message());
-        return std::nullopt;
-    }
-    return result;
-}
 
 
-inline  std::optional<json::value> get_value_from_json(const json::object& obj, std::string_view key){
-    if(auto it = obj.if_contains(key)){
-        return *it;
-    }
-    return std::nullopt;
+class SettingsProvider{
+private:
+ ConnectionSettings connection_settings_;
+ ServerSettings server_settings_;
+
+  ErrorCode set_server_settings(const json::object *serv_obj);
+  ErrorCode set_connection_settings(const json::object *conn_obj);
+  ErrorCode set_error_handling_settings(const json::object *err_obj);
+  bool has_field_in_json(const json::object *obj, std::string_view field);
+
+  std::optional<json::value> read_settings_from_json_file(const std::string& filename);
+
+public:
+SettingsProvider() = default;
+ErrorCode settings_provider(const std::string filename);
+ConnectionSettings& get_connection_settings() const;
+ServerSettings& get_server_settings() const;
+};
+
+
+template<class T>
+ErrorCode check_json_field(T &setting) {
+  
 }

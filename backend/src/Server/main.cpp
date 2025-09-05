@@ -10,46 +10,8 @@
 int main(int argc, char* argv[])
 {
     try {
-        const auto& settings = read_from_json_file("backend/config/settings.json");
-        if(!settings.has_value()){
-            ErrorHandler::log("Failed to read settings file.");
-            return EXIT_FAILURE;
-        }
-        const auto &settings_obj = settings.value().as_object();
-        if(!settings_obj.contains("server")){
-            ErrorHandler::log("Settings file contains deprecated 'server' section.");
-            return EXIT_FAILURE;
-        }
-        const auto &server = get_value_from_json(settings_obj, "server");
-        if(!server.has_value() || !server->is_object()){
-            ErrorHandler::log("Settings file is missing 'server' section.");
-            return EXIT_FAILURE;
-        }
-        const auto& server_obj = server.value().as_object();
-        if(!server_obj.contains("threads")){
-            ErrorHandler::log("Settings file is missing 'threads' setting.");
-            return EXIT_FAILURE;
-        }
-        const auto &error_file = get_value_from_json(settings_obj, "ErrorHandling");
-        if(!error_file.has_value() || !error_file->is_object()){
-            ErrorHandler::log("Settings file is missing 'ErrorHandling' section.");
-            return EXIT_FAILURE;
-        }
-        const auto& error_obj = error_file->as_object();
-        if(!error_obj.contains("log_file")){
-            ErrorHandler::log("Settings file is missing 'log_file' setting.");
-            return EXIT_FAILURE;
-        }
-        const auto &threads = get_value_from_json(server_obj, "threads");
-        if(!threads.has_value()){
-            ErrorHandler::log("Missing or invalid 'threads' setting.");
-            return EXIT_FAILURE;
-        }
-        const auto &log_file = get_value_from_json(error_obj, "log_file");
-        if(!log_file.has_value()){
-            ErrorHandler::log("Missing or invalid 'log_file' setting.");
-            return EXIT_FAILURE;
-        }
+        
+        
         ErrorHandler::set_log_file(log_file->as_string());
 
         auto plugin_manager = std::make_shared<PluginManager>();
@@ -57,7 +19,7 @@ int main(int argc, char* argv[])
             ErrorHandler::log_to_file("Some plugins failed to load!");
             return EXIT_FAILURE;
         } // Load plugins from the specified directory
-
+        auto sp = std::make_shared<SettingsProvider>();
         // The io_context is required for all I/O
         const int64_t threads_count = threads->as_int64();
         net::io_context ioc(threads_count);

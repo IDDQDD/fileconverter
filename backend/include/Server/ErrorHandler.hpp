@@ -4,13 +4,14 @@
 #include <fstream>
 
 enum class ErrorCode {
-    Success = 0,
+    SUCCESS = 0,
     FileNotFound,
     PluginLoadFailed,
     InvalidRequest,
     ConversionFailed,
     IOError,
-    Unknown
+    Unknown,
+    FAILURE
 };
 
 class ErrorHandler {
