@@ -1,12 +1,11 @@
 #include <magic.h>
 #include "Server/ErrorHandler.hpp"
-#include "Server/Settings.hpp"
 #include "Server/RequestHandler.hpp"
 
 
 RequestHandler::RequestHandler(tcp::socket &&socket, const ConnectionSettings &settings,
                                std::shared_ptr<PluginManager> plugin_manager)
-     : ws_(std::move(socket)), settings_(&settings), state_(State::WaitingJson), 
+     : ws_(std::move(socket)), settings_(settings), state_(State::WaitingJson), 
        plugin_manager_(plugin_manager){};
  
 void RequestHandler::handle_request() {
@@ -25,8 +24,8 @@ void RequestHandler::handle_request() {
 void RequestHandler::set_settings() {
     // Set connection settings for the request
     // settings_.set_default();
-    ws_.auto_fragment(settings_->auto_fragment);
-    ws_.read_message_max(settings_->read_message_max);
+    ws_.auto_fragment(settings_.auto_fragment);
+    ws_.read_message_max(settings_.read_message_max);
 }
 
 void RequestHandler::read_request() {
@@ -98,14 +97,15 @@ void RequestHandler::send_response(const std::optional<ConvertResult>& result, b
 
 void RequestHandler::handle_json(std::size_t &bytes_transferred) {
     auto message = beast::buffers_to_string(buffer_.data());
-    metadata_ = std::make_unique<Metadata>(json::parse(message));
-    if(metadata_->mime_type.empty() || metadata_->target_format.empty()){
+    metadata_ = md::build_metadata(json::parse(message));
+    if(metadata_ == nullptr){
         ErrorHandler::log_to_file("Invalid metadata received");
         send_response(std::nullopt, true, websocket::close_code::protocol_error);
     }
     ws_.text(false);
     buffer_.consume(bytes_transferred);
 };
+
 
 void RequestHandler::handle_file(std::size_t &bytes_transferred){
 

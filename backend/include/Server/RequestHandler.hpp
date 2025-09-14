@@ -25,12 +25,12 @@ using tcp = boost::asio::ip::tcp;       // from <boost/asio/ip/tcp.hpp>
 class RequestHandler : std::enable_shared_from_this<RequestHandler> {
 
     websocket::stream<tcp::socket> ws_;
-    std::shared_ptr<const ConnectionSettings>settings_; // Settings for the connection
+    const ConnectionSettings &settings_; // Settings for the connection
     State state_;
     std::shared_ptr<PluginManager> plugin_manager_;
     beast::flat_buffer buffer_; // Buffer for reading data
     IConverterFactory *converter; // Pointer to the converter factory for processing data
-    std::unique_ptr<const Metadata> metadata_; // Metadata for the request
+    std::unique_ptr<const md::Metadata> metadata_; // Metadata for the request
     std::optional<ConvertResult> result_;
     public:
 

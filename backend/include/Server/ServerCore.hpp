@@ -6,15 +6,17 @@
 #include "Server/RequestHandler.hpp"
 
 class ServerCore : public std::enable_shared_from_this<ServerCore> {
-    ServerSettings   server_settings_;        
-    ConnectionSettings settings_;             
+    const ServerSettings   &server_settings_;        
+    const ConnectionSettings &connection_settings_;             
     std::shared_ptr<PluginManager> plugin_manager_; 
     tcp::acceptor    acceptor_;               
     net::io_context& ioc_;                    
     std::shared_ptr<RequestHandler> request_handler_; 
 
 public:
-    ServerCore(net::io_context &ioc, const json::value &settings, std::shared_ptr<PluginManager> pm);
+    ServerCore(net::io_context &ioc, const ServerSettings &settings,
+               const ConnectionSettings &conn_settings,
+               std::shared_ptr<PluginManager> pm);
     void run();
 
 private:

@@ -1,7 +1,7 @@
 #include <fstream>
 #include <boost/date_time/posix_time/posix_time.hpp>
 #include "../include/Server/ErrorHandler.hpp"
-#include "../include/Server/SettingsUtils.hpp"
+#include "../include/Server/SettingsProvider.hpp"
 
 namespace pt = boost::posix_time;
 std::string ErrorHandler::filename = "error.log";

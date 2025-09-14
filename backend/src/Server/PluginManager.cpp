@@ -10,18 +10,18 @@ namespace fs = std::filesystem;
 
 ErrorCode PluginManager::LoadPlugins() {
     std::unique_lock<std::shared_mutex> lock(mutex_);
-    auto status = ErrorCode::Success;
+    auto status = ErrorCode::SUCCESS;
     for(const auto &entry : fs::directory_iterator(lib_path)) {
         auto entry_path = entry.path();
         #ifdef _WIN32
             if(entry.is_regular_file() && entry_path.extension() == ".dll") {
-                if(load_plugin_windows(entry_path.string()) != ErrorCode::Success) {
+                if(load_plugin_windows(entry_path.string()) != ErrorCode::SUCCESS) {
                     status = ErrorCode::PluginLoadFailed;
                 }
             }
         #else
             if(entry.is_regular_file() && entry_path.extension() == ".so") {
-                if(load_plugin_unix(entry_path.string()) != ErrorCode::Success) {
+                if(load_plugin_unix(entry_path.string()) != ErrorCode::SUCCESS) {
                     status = ErrorCode::PluginLoadFailed;
                 }
             }
@@ -52,7 +52,7 @@ ErrorCode PluginManager::load_plugin_windows(const std::string &path){
         return ErrorCode::PluginLoadFailed;
     }
     plugins_[{instance->support_mime_type(), instance->target_format()}] = PluginInfo(instance, handle);
-    return ErrorCode::Success;
+    return ErrorCode::SUCCESS;
 
 
 }
@@ -80,7 +80,7 @@ ErrorCode PluginManager::load_plugin_unix(const std::string &path){
     }
     plugins_[{instance->support_mime_type(), instance->target_format()}] = PluginInfo(instance, handle);
 
-    return ErrorCode::Success;
+    return ErrorCode::SUCCESS;
 }
 #endif
 
